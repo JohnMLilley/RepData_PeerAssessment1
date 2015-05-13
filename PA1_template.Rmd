@@ -1,25 +1,159 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research - Assignment 1"
+author: "John M Lilley"
+date: "Wednesday, May 13, 2015"
+output: html_document
 ---
 
+ Load the data from the downloaded .CSV file.  
+ Ensure that the file is in the working folder of this session
+```{r, echo=TRUE}
+activity_data <- read.csv('activity.csv')
+```
 
-## Loading and preprocessing the data
+Show total number of steps
+```{r, echo=TRUE}
+sum(activity_data$steps, na.rm = TRUE)
+```
+
+Plot histogram of the total steps taken per day, ignoring missing values in the dataset.  
+The histogram will ignore NAs
+```{r, echo=TRUE}
+hist(activity_data$steps,xlab="Steps",ylab="Frequency",main="Total Steps per day")
+```
+
+Report the mean and median of the total number of steps taken per day
+```{r, echo=TRUE}
+median(activity_data$steps, na.rm = TRUE)
+mean(activity_data$steps, na.rm = TRUE)
+```
+ 
+What is the average daily activity pattern?  
+Create aggregate with mean of steps by Interval
+```{r, echo=TRUE}
+av_dat <- aggregate(steps ~ interval, activity_data, mean)
+```
+
+Plot a time series, type line of Interval by average number of steps across all days
+```{r, echo=TRUE}
+plot(av_dat$interval,av_dat$steps,type='l',xlab="Interval",ylab="Average Steps",main="Average Steps per Interval")
+```
+
+Find Interval with the maximum avearge steps
+```{r, echo=TRUE}
+av_dat[which.max(av_dat$steps),]
+```
+
+```{r, echo=TRUE}
+av_dat[which.max(av_dat$steps),]$interval
+```
+
+###Filling in the missing NA values 
+
+The strategy will be that each NA value will be filled with the mean value for all the days for that time Interval
+ 
+Separate the NA rows
+```{r, echo=TRUE}
+na_dat <- activity_data[is.na(activity_data$steps), ]
+```
+
+Create dataframe containing NA rows with a replacement value which is the average for the Interval
+```{r, echo=TRUE}
+na_merge <- merge(na_dat,av_dat, by.x = "interval",by.y = "interval")
+```
+
+Create new dataframe from na_merge with just the columns we want
+```{r, echo=TRUE}
+na_fixed <- na_merge[,c("steps.y","date","interval")]
+```
+
+Change the column name to steps ready for rbind
+```{r, echo=TRUE}
+colnames(na_fixed)[1] <- "steps"
+```
+
+Create a dataframe of just the not NA rows
+```{r, echo=TRUE}
+complete_dat <- activity_data[!is.na(activity_data$steps), ]
+```
+
+Bind the fixed NA rows back to the non-NA rows
+```{r, echo=TRUE}
+activity_fixed <- rbind(complete_dat,na_fixed)
+```
+
+Look at differences between the original and the NA-fixed version
+```{r, echo=TRUE}
+hist(activity_fixed$steps,xlab="Steps",ylab="Frequency",main="Total Steps per day (Fixed NAs)")
+```
+
+There is a differnce in the overall number of steps
+```{r, echo=TRUE}
+summary(activity_data$steps)
+```
 
 
+```{r, echo=TRUE}
+summary(activity_fixed$steps)
+```
 
-## What is mean total number of steps taken per day?
+Mean and Max remain the same.  
+
+Looking closer at the means:
+```{r, echo=TRUE}
+av_dat_fixed <- aggregate(steps ~ interval, activity_fixed, mean)
+```
+
+```{r, echo=TRUE}
+plot(av_dat_fixed$interval,av_dat_fixed$steps,type='l',xlab="Interval",ylab="Average Steps",main="Average Steps per Interval (Fixed NAs)")
+```
+
+```{r, echo=TRUE}
+av_dat[which.max(av_dat$steps),]
+```
+
+```{r, echo=TRUE}
+av_dat[which.max(av_dat_fixed$steps),]
+```
+
+Since the NAs were filled with mean values there is no change to the means.  
+
+ Comparing the total daily steps
+```{r, echo=TRUE}
+sum(activity_data$steps, na.rm = TRUE )
+sum(activity_fixed$steps, na.rm = TRUE )
+```
+### Weekday/weekend analysis
+
+```{r, echo=TRUE}
+install.packages("lubridate", repos="http://cran.rstudio.com/")
+library(lubridate)
+```
+
+Convert date column to a date class
+```{r, echo=TRUE}
+activity_fixed$date <- ymd(activity_fixed$date)
+```
+ 
+Convert date to day of week, determine if it is a weekend or weekday and make it a factor  
+add the resultant as a new column weeday 
+```{r, echo=TRUE}
+activity_fixed$weekday <- as.factor(ifelse(wday(activity_fixed$date) %in% c("7", "1"), "weekend","weekday"))
+```
+
+Average the step by interval and weekday
+```{r, echo=TRUE}
+av_dat_fixed_wd <- aggregate(steps ~ interval + weekday, activity_fixed, mean)
+```
+
+Panel plot Interval and average steps by weekend/weekday
+```{r, echo=TRUE}
+library(lattice)
+```
 
 
+```{r, echo=TRUE}
+xyplot(steps ~ interval | factor(weekday), data=av_dat_fixed_wd,type='l',layout=c(1,2))
+```
 
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+--------------------- End of Document ---------------------------
