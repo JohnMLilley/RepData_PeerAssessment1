@@ -3,6 +3,8 @@ title: "Reproducible Research - Assignment 1"
 author: "John M Lilley"
 date: "Wednesday, May 13, 2015"
 output: html_document
+keep_md: true
+self_contained: false
 ---
 
  Load the data from the downloaded .CSV file.  
